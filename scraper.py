@@ -44,6 +44,13 @@ class Scraper:
         bond_text = driver.execute_script("return arguments[0].textContent;", ten_years_bond)
 
         return {"ten_years_bond": float(bond_text.replace('％', '')) / 100}
+    
+    def check_balance(self):
+        driver = self.driver
+        remaining_power = driver.find_element(By.XPATH, '//*[@id="id_secTradeRemainingPower"]')
+        print(f"balance: {remaining_power.text}")
+        num_str_without_comma = remaining_power.text.replace(',', '')
+        return int(num_str_without_comma)
 
     def exists_open_interest(self):
         driver = self.driver

@@ -46,9 +46,9 @@ class Trade:
         return ohlcv_data
 
     def execute_trade(self, prediction):
-        # self.check_balance()
-        # Execute trade based on prediction here
         self.scraper.login()
+        balance = self.scraper.check_balance()
+        # Execute trade based on prediction here
         position = self.scraper.exists_open_interest()
         trade_action = self.decide_trade_action(position["buy"], position["sell"], prediction)
 
