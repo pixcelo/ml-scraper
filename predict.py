@@ -17,6 +17,7 @@ class Predictor:
             prefix = df.columns[0].split('_')[0]
             processed_df = feature_engineering(df, prefix)
             processed_df = create_label(processed_df, prefix, 15)
+            print(processed_df.columns)
             processed_dfs.append(processed_df)
 
         combined_df = pd.concat(processed_dfs, axis=1).dropna()
@@ -27,7 +28,7 @@ class Predictor:
         preprocessed_data = self.preprocess_market_data(market_data)
 
         # Make prediction based on preprocessed market_data
-        preprocessed_data = preprocessed_data.drop("5m_target", axis=1) 
+        preprocessed_data = preprocessed_data.drop("5min_target", axis=1) 
         prediction_proba = self.model.predict(preprocessed_data, raw_score=False, pred_leaf=False, pred_contrib=False)
 
         # Apply threshold to the predicted probabilities
@@ -47,11 +48,10 @@ def log_transform_feature(X):
     return np.log(X)
 
 def feature_engineering(df, prefix):
-    # open = df[f'{prefix}_open'].values
+    open = df[f'{prefix}_open'].values
     high = df[f'{prefix}_high'].values
     low = df[f'{prefix}_low'].values
     close = df[f'{prefix}_close'].values
-    volume = df[f'{prefix}_volume'].values
     hilo = (high + low) / 2
 
     df[f'{prefix}_RSI_ST'] = talib.RSI(close)/close
@@ -72,7 +72,6 @@ def feature_engineering(df, prefix):
     df[f'{prefix}_BBANDS_lowerband'] = (df[f'{prefix}_BB_LOWER'] - hilo) / close
     df[f'{prefix}_STOCH_K'], df[f'{prefix}_STOCH_D'] = talib.STOCH(high, low, close)/close
     df[f'{prefix}_MON'] = talib.MOM(close, timeperiod=5)
-    df[f'{prefix}_OBV'] = talib.OBV(close, volume)
 
     df = df.dropna()
     df = df.reset_index(drop=True)
