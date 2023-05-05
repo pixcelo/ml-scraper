@@ -22,10 +22,11 @@ def main():
     while True:
         try:
             # Get market data
-            market_data = trade.get_market_data()
+            # market_data = trade.get_market_data()
 
             # Make predictions
-            prediction = predictor.predict(market_data)
+            # prediction = predictor.predict(market_data)
+            prediction = 1
             print(f"The predicted value is {prediction}.")
 
             # Execute trade

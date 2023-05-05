@@ -1,14 +1,8 @@
 import pandas as pd
 import requests
-import time
-import hmac
-import uuid
-import hashlib
-import json
 from urllib.parse import urlencode
-from position_manager import PositionManager
 from discord_notifier import DiscordNotifier
-from account import Account
+from scraper import Scraper
 from logger import Logger
 
 class Trade:
@@ -18,8 +12,9 @@ class Trade:
         self.exchange_name = config.get("exchange", "exchange_name")
         self.logger = Logger("trade")
         self.discord_notifier = DiscordNotifier(config)
+        self.scraper = Scraper()
         self.url = "https://api.twelvedata.com"
-        self.qty = 0.002
+        self.qty = 1
 
     def get_ohlcv(self, timeframe):
         endpoint = "/time_series"
@@ -53,27 +48,26 @@ class Trade:
     def execute_trade(self, prediction):
         # self.check_balance()
         # Execute trade based on prediction here
-        position_manager = PositionManager(self.exchange, "BTCUSDT")
-        long_positions, short_positions = position_manager.separate_positions_by_side()
+        self.scraper.login()
+        position = self.scraper.exists_open_interest()
+        trade_action = self.decide_trade_action(position["buy"], position["sell"], prediction)
 
         amount = self.qty
         result = None
 
-        trade_action = self.decide_trade_action(long_positions, short_positions, prediction)
-
         if trade_action == "BUY_TO_OPEN":
-            result = self.place_order("BTCUSDT", "Buy", amount)
+            result = self.scraper.place_order("Buy", amount)
         elif trade_action == "SELL_TO_OPEN":
-            result = self.place_order("BTCUSDT", "Sell", amount)
+            result = self.scraper.place_order("Sell", amount)
         # After executing the settlement order, hold a new position in the same direction
         elif trade_action == "SELL_TO_CLOSE":
-            result = self.place_order("BTCUSDT", "Sell", amount)
+            result = self.scraper.place_order("Sell", amount)
             if result:
-                result = self.place_order("BTCUSDT", "Sell", amount)
+                result = self.scraper.place_order("Sell", amount)
         elif trade_action == "BUY_TO_CLOSE":
-            result = self.place_order("BTCUSDT", "Buy", amount)
+            result = self.scraper.place_order("Buy", amount)
             if result:
-                result = self.place_order("BTCUSDT", "Buy", amount)
+                result = self.scraper.place_order("Buy", amount)
         elif trade_action == "HOLD_LONG" or trade_action == "HOLD_SHORT" or trade_action == "DO_NOTHING":
             pass
 
@@ -90,7 +84,7 @@ class Trade:
         return message
     
     def decide_trade_action(self, long_positions, short_positions, prediction):
-        if long_positions:
+        if long_positions != "0":
             if prediction == 1:
                 return "HOLD_LONG"
             else:
@@ -101,7 +95,7 @@ class Trade:
             else:
                 pass
 
-        if short_positions:
+        if short_positions != "0":
             if prediction != 1:
                 return "HOLD_SHORT"
             else:
@@ -113,22 +107,6 @@ class Trade:
                 pass
 
         return "DO_NOTHING"
-
-    def place_order(self, symbol, side, amount):
-        endpoint="/v5/order/create"
-        method="POST"
-        orderLinkId=uuid.uuid4().hex
-        params = {
-            "category": "linear",
-            "symbol": symbol,
-            "isLeverage": 1,
-            "side": side,
-            "orderType": "Market",
-            "qty": str(amount),
-            "orderLinkId": orderLinkId,
-            "positionIdx": 0 # one-way mode
-        }
-        return self.http_request(endpoint, method, params, "Order")   
     
     def http_request(self, endpoint, params):
         try:
