@@ -54,23 +54,7 @@ class Scraper:
 
     def exists_open_interest(self):
         driver = self.driver
-        local_storage_data = {
-            'cfd.228435341.introduction-modal-flag': 'false',
-            'cfd.228435341.order-tab-select': '2',
-            'cfd.228435341.cfd-product-code': '00003060000',
-        }
-
-        for key, value in local_storage_data.items():
-            driver.execute_script(f"window.localStorage.setItem('{key}', '{value}');")
-
-        driver.refresh()
-
-        iframe = driver.find_element(By.ID, "iframe_trade")
-        driver.switch_to.frame(iframe)
-
-        speed_order_element = driver.find_element(By.ID, "react-tabs-14")
-        speed_order_element.click()
-
+        self.switch_speed_order_menu()
         sell_oi = driver.find_element(By.XPATH, '//*[@id="react-tabs-15"]/div/div[3]/div[3]/div/div[5]/div/div[1]/label')
         buy_oi = driver.find_element(By.XPATH, '//*[@id="react-tabs-15"]/div/div[3]/div[3]/div/div[5]/div/div[3]/label')
 
@@ -88,3 +72,39 @@ class Scraper:
             buy_button.click()
         else:
             sell_button.click()
+
+    def close_order(self, side):
+        self.switch_speed_order_menu()
+        pips = self.pips(side)
+        driver = self.driver
+        close_button = driver.find_element(By.XPATH, '//*[@id="react-tabs-15"]/div/div[3]/div[3]/div/div[1]/div[2]')
+        close_button.click()
+        return pips
+
+    def pips(self, side):
+        driver = self.driver
+        if side == "Buy":
+            pips = driver.find_element(By.XPATH, '//*[@id="react-tabs-15"]/div/div[3]/div[3]/div/div[5]/div/div[3]/label')
+        else:
+            pips = driver.find_element(By.XPATH, '//*[@id="react-tabs-15"]/div/div[3]/div[3]/div/div[5]/div/div[1]/label')
+        print(f"pips: {pips.text}")
+        return int(pips.text)
+    
+    def switch_speed_order_menu(self):
+        driver = self.driver
+        local_storage_data = {
+            'cfd.228435341.introduction-modal-flag': 'false',
+            'cfd.228435341.order-tab-select': '2',
+            'cfd.228435341.cfd-product-code': '00003060000',
+        }
+
+        for key, value in local_storage_data.items():
+            driver.execute_script(f"window.localStorage.setItem('{key}', '{value}');")
+
+        driver.refresh()
+
+        iframe = driver.find_element(By.ID, "iframe_trade")
+        driver.switch_to.frame(iframe)
+
+        speed_order_element = driver.find_element(By.ID, "react-tabs-14")
+        speed_order_element.click()

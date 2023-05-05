@@ -61,13 +61,15 @@ class Trade:
             result = self.scraper.place_order("Sell", amount)
         # After executing the settlement order, hold a new position in the same direction
         elif trade_action == "SELL_TO_CLOSE":
-            result = self.scraper.place_order("Sell", amount)
-            if result:
-                result = self.scraper.place_order("Sell", amount)
+            result = self.scraper.close_order("Sell")
+            # result = self.scraper.place_order("Sell", amount)
+            # if result:
+            #     result = self.scraper.place_order("Sell", amount)
         elif trade_action == "BUY_TO_CLOSE":
-            result = self.scraper.place_order("Buy", amount)
-            if result:
-                result = self.scraper.place_order("Buy", amount)
+            result = self.scraper.close_order("Buy")
+            # result = self.scraper.place_order("Buy", amount)
+            # if result:
+            #     result = self.scraper.place_order("Buy", amount)
         elif trade_action == "HOLD_LONG" or trade_action == "HOLD_SHORT" or trade_action == "DO_NOTHING":
             pass
 
